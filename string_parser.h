@@ -30,6 +30,7 @@ class StringParser
 public:
     StringParser(char* buffer, long size) : m_buffer(buffer), m_size(size), m_pos(0) {}
     int ParseString(long srcPos, unsigned char* dest, int &destLength);
+    int ParseStringAndFormat(long srcPos, unsigned char* dest, int& destLength, int lineLen);
 
 private:
     struct Integer
@@ -50,6 +51,7 @@ private:
     void SkipWhitespace();
     void SkipRestOfInteger(int radix);
     void RaiseError(const char* format, ...);
+    int GetLengthOfBracketConstant(char *buffer);
 };
 
 #endif // STRING_PARSER_H

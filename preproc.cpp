@@ -26,7 +26,7 @@
 #include "c_file.h"
 #include "charmap.h"
 
-Charmap* g_charmap;
+Charmap *g_charmap;
 
 void PrintAsmBytes(unsigned char *s, int length)
 {
@@ -72,17 +72,16 @@ void PreprocAsmFile(std::string filename)
             break;
         case Directive::String:
         {
-			char lang[10];
-			(void) stack.top().GetLanguage(lang);
+            char lang[10];
+            (void)stack.top().GetLanguage(lang);
             unsigned char s[kMaxStringLength];
             int length = stack.top().ReadString((s));
-			s[length] = 0xFF;
-			std::printf("#ifdef ");
-			std::printf(lang);
-			std::printf("\n");
-			std::printf("\t");
-            PrintAsmBytes(s, length+1);
-			std::printf("#endif\n\n");
+            std::printf("#ifdef ");
+            std::printf(lang);
+            std::printf("\n");
+            std::printf("\t");
+            PrintAsmBytes(s, length + 1);
+            std::printf("#endif\n\n");
             break;
         }
         case Directive::Braille:
@@ -90,6 +89,21 @@ void PreprocAsmFile(std::string filename)
             unsigned char s[kMaxStringLength];
             int length = stack.top().ReadBraille(s);
             PrintAsmBytes(s, length);
+            break;
+        }
+        case Directive::AutoString:
+        {
+            char lang[10];
+            int maxCharLen = stack.top().ReadInt();
+            (void)stack.top().GetLanguage(lang);
+            unsigned char s[kMaxStringLength];
+            int length = stack.top().ReadAutoString(s, maxCharLen);
+            std::printf("#ifdef ");
+            std::printf(lang);
+            std::printf("\n");
+            std::printf("\t");
+            PrintAsmBytes(s, length + 1);
+            std::printf("#endif\n\n");
             break;
         }
         case Directive::Unknown:
@@ -118,9 +132,9 @@ void PreprocCFile(std::string filename)
     cFile.Preproc();
 }
 
-char* GetFileExtension(char* filename)
+char *GetFileExtension(char *filename)
 {
-    char* extension = filename;
+    char *extension = filename;
 
     while (*extension != 0)
         extension++;
@@ -149,7 +163,7 @@ int main(int argc, char **argv)
 
     g_charmap = new Charmap(argv[2]);
 
-    char* extension = GetFileExtension(argv[1]);
+    char *extension = GetFileExtension(argv[1]);
 
     if (!extension)
         FATAL_ERROR("\"%s\" has no file extension.\n", argv[1]);

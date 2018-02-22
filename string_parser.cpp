@@ -18,6 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#include <stdio.h>
+#include <string.h>
 #include <cstdio>
 #include <cstdarg>
 #include <stdexcept>
@@ -25,6 +27,8 @@
 #include "string_parser.h"
 #include "char_util.h"
 #include "utf8.h"
+
+#define MAX_BUFFER_SIZE 10
 
 // Reads a charmap char or escape sequence.
 std::string StringParser::ReadCharOrEscape()
@@ -107,7 +111,6 @@ std::string StringParser::ReadBracketedConstants()
         if (IsIdentifierStartingChar(m_buffer[m_pos]))
         {
             long startPos = m_pos;
-
             m_pos++;
 
             while (IsIdentifierChar(m_buffer[m_pos]))
@@ -165,8 +168,198 @@ std::string StringParser::ReadBracketedConstants()
     return totalSequence;
 }
 
+int StringParser::GetLengthOfBracketConstant(char *buffer)
+{
+    m_pos++;
+    if (IsIdentifierStartingChar(m_buffer[m_pos]))
+    {
+        long startPos = m_pos;
+
+        m_pos++;
+
+        while (IsIdentifierChar(m_buffer[m_pos]))
+        {
+            m_pos++;
+        }
+
+        std::string ident(&m_buffer[startPos], m_pos - startPos);
+        strncat(buffer, ident.c_str(), kMaxStringLength);
+
+        if (ident == "PLAYER")
+            return MAX_BUFFER_SIZE;
+        else if (ident == "RIVAL")
+            return MAX_BUFFER_SIZE;
+        else if (ident == "BUFFER_1")
+            return MAX_BUFFER_SIZE;
+        else if (ident == "BUFFER_2")
+            return MAX_BUFFER_SIZE;
+        else if (ident == "BUFFER_3")
+            return MAX_BUFFER_SIZE;
+        else if (ident == "VERSION")
+            return MAX_BUFFER_SIZE;
+        else if (ident == "EVIL_TEAM")
+            return MAX_BUFFER_SIZE;
+        else if (ident == "GOOD_TEAM")
+            return MAX_BUFFER_SIZE;
+        else if (ident == "EVIL_LEADER")
+            return MAX_BUFFER_SIZE;
+        else if (ident == "GOOD_LEADER")
+            return MAX_BUFFER_SIZE;
+        else if (ident == "EVIL_LEGENDARY")
+            return MAX_BUFFER_SIZE;
+        else if (ident == "GOOD_LEGENDARY")
+            return MAX_BUFFER_SIZE;
+        return 0;
+    }
+    return 0;
+}
+
+int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &destLength, int lineLen)
+{
+    m_pos = srcPos;
+    if (m_buffer[m_pos] != '"')
+        RaiseError("expected UTF-8 string literal");
+
+    long start = m_pos;
+    (void)start;
+
+    bool writeNewLine = true;
+    bool printSpace = false;
+    char parsedBuffer[kMaxStringLength];
+    parsedBuffer[0] = '\0';
+    strncat(parsedBuffer, "\"", 1);
+    char currentBuffer[kMaxStringLength];
+    currentBuffer[0] = '\0';
+    int currentLen = 0;
+    int currentBufferLen = 0;
+    m_pos++;
+    while (m_buffer[m_pos] != '"')
+    {
+        if (m_buffer[m_pos] == ' ')
+        {
+            currentLen++;
+            if (currentLen < lineLen)
+            {
+                if (printSpace)
+                {
+                    strncat(parsedBuffer, " ", 1);
+                }
+                else
+                {
+                    printSpace = true;
+                }
+                strncat(parsedBuffer, currentBuffer, kMaxStringLength);
+            }
+            else
+            {
+                if (writeNewLine)
+                {
+                    strncat(parsedBuffer, "\\n", 2);
+                    writeNewLine = false;
+                }
+                else
+                {
+                    strncat(parsedBuffer, "\\l", 2);
+                }
+                strncat(parsedBuffer, currentBuffer, kMaxStringLength);
+                currentLen = currentBufferLen;
+            }
+            currentBufferLen = 0;
+            currentBuffer[0] = '\0';
+        }
+        else if (m_buffer[m_pos] == '{')
+        {
+            printf("reading bracket stuff\n");
+            strncat(currentBuffer, "{", 1);
+            int bracketLen = GetLengthOfBracketConstant(currentBuffer);
+            strncat(currentBuffer, "}", 1);
+            currentLen += bracketLen;
+            currentBufferLen += bracketLen;
+        }
+        else
+        {
+            if (m_buffer[m_pos] == '\\')
+            {
+                m_pos++;
+                if (m_buffer[m_pos] == 'n' || m_buffer[m_pos] == 'l' || m_buffer[m_pos] == 'p')
+                {
+                    currentLen = 0;
+                    currentBufferLen = 0;
+                    printSpace = false;
+                    if (m_buffer[m_pos] == 'p')
+                    {
+                        writeNewLine = true;
+                    }
+                }
+                else
+                {
+                    currentLen++;
+                    currentBufferLen++;
+                }
+                strncat(currentBuffer, &m_buffer[m_pos - 1], 2);
+            }
+            else
+            {
+                currentLen++;
+                currentBufferLen++;
+                strncat(currentBuffer, &m_buffer[m_pos], 1);
+            }
+        }
+        m_pos++;
+    }
+    // print the rest
+    if (currentLen < lineLen)
+    {
+        if (printSpace)
+        {
+            strncat(parsedBuffer, " ", 1);
+        }
+        strncat(parsedBuffer, currentBuffer, kMaxStringLength);
+    }
+    else
+    {
+        if (writeNewLine)
+        {
+            strncat(parsedBuffer, "\\n", 2);
+            writeNewLine = false;
+        }
+        else
+        {
+            strncat(parsedBuffer, "\\l", 2);
+        }
+        strncat(parsedBuffer, currentBuffer, kMaxStringLength);
+        currentLen = currentBufferLen;
+    }
+    strncat(parsedBuffer, "\"", 1);
+    m_pos++;
+
+    //parse the actual string
+    destLength = 0;
+    int internalPos = 1;
+    while (parsedBuffer[internalPos] != '"')
+    {
+        int savedPos = m_pos;
+        m_pos = internalPos;
+        char* savedBuffer = m_buffer;
+        m_buffer = parsedBuffer;
+        std::string sequence = (parsedBuffer[internalPos] == '{') ? ReadBracketedConstants() : ReadCharOrEscape();
+        internalPos = m_pos;
+        m_pos = savedPos;
+        m_buffer = savedBuffer;
+        for (const char &c : sequence)
+        {
+            if (destLength == kMaxStringLength)
+                RaiseError("mapped string longer than %d bytes", kMaxStringLength);
+
+            dest[destLength++] = c;
+        }
+    }
+    dest[destLength++] = 0xFF;
+    return m_pos - start;
+}
+
 // Reads a charmap string.
-int StringParser::ParseString(long srcPos, unsigned char* dest, int& destLength)
+int StringParser::ParseString(long srcPos, unsigned char *dest, int &destLength)
 {
     m_pos = srcPos;
 
@@ -183,7 +376,7 @@ int StringParser::ParseString(long srcPos, unsigned char* dest, int& destLength)
     {
         std::string sequence = (m_buffer[m_pos] == '{') ? ReadBracketedConstants() : ReadCharOrEscape();
 
-        for (const char& c : sequence)
+        for (const char &c : sequence)
         {
             if (destLength == kMaxStringLength)
                 RaiseError("mapped string longer than %d bytes", kMaxStringLength);
@@ -191,13 +384,14 @@ int StringParser::ParseString(long srcPos, unsigned char* dest, int& destLength)
             dest[destLength++] = c;
         }
     }
+    dest[destLength++] = 0xFF;
 
     m_pos++; // Go past the right quote.
 
     return m_pos - start;
 }
 
-void StringParser::RaiseError(const char* format, ...)
+void StringParser::RaiseError(const char *format, ...)
 {
     const int bufferSize = 1024;
     char buffer[bufferSize];
@@ -283,7 +477,7 @@ StringParser::Integer StringParser::ReadDecimal()
             size = 1;
     }
 
-    return{ static_cast<std::uint32_t>(n), size };
+    return {static_cast<std::uint32_t>(n), size};
 }
 
 StringParser::Integer StringParser::ReadHex()
@@ -330,7 +524,7 @@ StringParser::Integer StringParser::ReadHex()
     }
     }
 
-    return{ static_cast<std::uint32_t>(n), size };
+    return {static_cast<std::uint32_t>(n), size};
 }
 
 StringParser::Integer StringParser::ReadInteger()

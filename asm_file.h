@@ -31,6 +31,7 @@ enum class Directive
     Include,
     String,
     Braille,
+    AutoString,
     Unknown
 };
 
@@ -50,6 +51,8 @@ public:
     bool IsAtEnd();
     void OutputLine();
     void OutputLocation();
+    int ReadInt();
+    int ReadAutoString(unsigned char *s, int lineLength);
 
 private:
     char* m_buffer;

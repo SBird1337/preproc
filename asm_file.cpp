@@ -58,7 +58,7 @@ AsmFile::AsmFile(std::string filename) : m_filename(filename)
     RemoveComments();
 }
 
-AsmFile::AsmFile(AsmFile&& other) : m_filename(std::move(other.m_filename))
+AsmFile::AsmFile(AsmFile &&other) : m_filename(std::move(other.m_filename))
 {
     m_buffer = other.m_buffer;
     m_pos = other.m_pos;
@@ -170,20 +170,42 @@ Directive AsmFile::GetDirective()
         return Directive::String;
     else if (CheckForDirective(".braille"))
         return Directive::Braille;
+    else if (CheckForDirective(".autostring"))
+        return Directive::AutoString;
     else
         return Directive::Unknown;
 }
 
-int AsmFile::GetLanguage(char* buffer)
+int AsmFile::ReadInt(void)
 {
-	SkipWhitespace();
-	int len = 0;
-	while(m_buffer[m_pos] != ' ' && m_buffer[m_pos] != '\t' && len < 10) {
-		buffer[len] = m_buffer[m_pos];
-		m_pos++;
-		len++;
-	}
-	return len;
+    SkipWhitespace();
+    int len = 0;
+    char buffer[10];
+    while (m_buffer[m_pos] != ' ' && m_buffer[m_pos] != '\t' && len < 10)
+    {
+        buffer[len] = m_buffer[m_pos];
+        m_pos++;
+        len++;
+    }
+    int i = 0;
+    if (sscanf(buffer, "%i", &i) == 0)
+    {
+        RaiseError("could not read integer from autostring directive");
+    }
+    return i;
+}
+
+int AsmFile::GetLanguage(char *buffer)
+{
+    SkipWhitespace();
+    int len = 0;
+    while (m_buffer[m_pos] != ' ' && m_buffer[m_pos] != '\t' && len < 10)
+    {
+        buffer[len] = m_buffer[m_pos];
+        m_pos++;
+        len++;
+    }
+    return len;
 }
 
 // Checks if we're at label that ends with '::'.
@@ -266,8 +288,42 @@ std::string AsmFile::ReadPath()
     return std::string(&m_buffer[startPos], length);
 }
 
+int AsmFile::ReadAutoString(unsigned char *s, int lineLength)
+{
+    SkipWhitespace();
+    int length;
+    StringParser stringParser(m_buffer, m_size);
+
+    try
+    {
+        m_pos += stringParser.ParseStringAndFormat(m_pos, s, length, lineLength);
+    }
+    catch (std::runtime_error e)
+    {
+        RaiseError(e.what());
+    }
+
+    SkipWhitespace();
+
+    if (ConsumeComma())
+    {
+        SkipWhitespace();
+        int padLength = ReadPadLength() - 1;
+        if (length > padLength)
+            RaiseError("requested padding of %d exceeded.", padLength + 1);
+        while (length < padLength)
+        {
+            s[length++] = 0;
+        }
+    }
+
+    ExpectEmptyRestOfLine();
+
+    return length;
+}
+
 // Reads a charmap string.
-int AsmFile::ReadString(unsigned char* s)
+int AsmFile::ReadString(unsigned char *s)
 {
     SkipWhitespace();
 
@@ -288,8 +344,9 @@ int AsmFile::ReadString(unsigned char* s)
     if (ConsumeComma())
     {
         SkipWhitespace();
-        int padLength = ReadPadLength();
-
+        int padLength = ReadPadLength() - 1;
+        if (length > padLength)
+            RaiseError("requested padding of %d exceeded.", padLength + 1);
         while (length < padLength)
         {
             s[length++] = 0;
@@ -301,41 +358,41 @@ int AsmFile::ReadString(unsigned char* s)
     return length;
 }
 
-int AsmFile::ReadBraille(unsigned char* s)
+int AsmFile::ReadBraille(unsigned char *s)
 {
     static std::map<char, unsigned char> encoding =
-    {
-        { 'A', 0x01 },
-        { 'B', 0x05 },
-        { 'C', 0x03 },
-        { 'D', 0x0B },
-        { 'E', 0x09 },
-        { 'F', 0x07 },
-        { 'G', 0x0F },
-        { 'H', 0x0D },
-        { 'I', 0x06 },
-        { 'J', 0x0E },
-        { 'K', 0x11 },
-        { 'L', 0x15 },
-        { 'M', 0x13 },
-        { 'N', 0x1B },
-        { 'O', 0x19 },
-        { 'P', 0x17 },
-        { 'Q', 0x1F },
-        { 'R', 0x1D },
-        { 'S', 0x16 },
-        { 'T', 0x1E },
-        { 'U', 0x31 },
-        { 'V', 0x35 },
-        { 'W', 0x2E },
-        { 'X', 0x33 },
-        { 'Y', 0x3B },
-        { 'Z', 0x39 },
-        { ' ', 0x00 },
-        { ',', 0x04 },
-        { '.', 0x2C },
-        { '$', 0xFF },
-    };
+        {
+            {'A', 0x01},
+            {'B', 0x05},
+            {'C', 0x03},
+            {'D', 0x0B},
+            {'E', 0x09},
+            {'F', 0x07},
+            {'G', 0x0F},
+            {'H', 0x0D},
+            {'I', 0x06},
+            {'J', 0x0E},
+            {'K', 0x11},
+            {'L', 0x15},
+            {'M', 0x13},
+            {'N', 0x1B},
+            {'O', 0x19},
+            {'P', 0x17},
+            {'Q', 0x1F},
+            {'R', 0x1D},
+            {'S', 0x16},
+            {'T', 0x1E},
+            {'U', 0x31},
+            {'V', 0x35},
+            {'W', 0x2E},
+            {'X', 0x33},
+            {'Y', 0x3B},
+            {'Z', 0x39},
+            {' ', 0x00},
+            {',', 0x04},
+            {'.', 0x2C},
+            {'$', 0xFF},
+        };
 
     SkipWhitespace();
 
@@ -489,11 +546,11 @@ void AsmFile::ExpectEmptyRestOfLine()
     }
     else if (m_buffer[m_pos] == '\r')
     {
-		m_pos++;
-		if(m_buffer[m_pos] != '\n')
-		{
-			RaiseError("unknown line ending");
-		}
+        m_pos++;
+        if (m_buffer[m_pos] != '\n')
+        {
+            RaiseError("unknown line ending");
+        }
         m_pos++;
         m_lineStart = m_pos;
         m_lineNum++;
@@ -517,7 +574,7 @@ void AsmFile::OutputLocation()
 }
 
 // Reports a diagnostic message.
-void AsmFile::ReportDiagnostic(const char* type, const char* format, std::va_list args)
+void AsmFile::ReportDiagnostic(const char *type, const char *format, std::va_list args)
 {
     const int bufferSize = 1024;
     char buffer[bufferSize];
@@ -525,24 +582,24 @@ void AsmFile::ReportDiagnostic(const char* type, const char* format, std::va_lis
     std::fprintf(stderr, "%s:%ld: %s: %s\n", m_filename.c_str(), m_lineNum, type, buffer);
 }
 
-#define DO_REPORT(type)                   \
-do                                        \
-{                                         \
-    std::va_list args;                    \
-    va_start(args, format);               \
-    ReportDiagnostic(type, format, args); \
-    va_end(args);                         \
-} while (0)
+#define DO_REPORT(type)                       \
+    do                                        \
+    {                                         \
+        std::va_list args;                    \
+        va_start(args, format);               \
+        ReportDiagnostic(type, format, args); \
+        va_end(args);                         \
+    } while (0)
 
 // Reports an error diagnostic and terminates the program.
-void AsmFile::RaiseError(const char* format, ...)
+void AsmFile::RaiseError(const char *format, ...)
 {
     DO_REPORT("error");
     std::exit(1);
 }
 
 // Reports a warning diagnostic.
-void AsmFile::RaiseWarning(const char* format, ...)
+void AsmFile::RaiseWarning(const char *format, ...)
 {
     DO_REPORT("warning");
 }
