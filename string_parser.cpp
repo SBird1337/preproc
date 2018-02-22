@@ -282,8 +282,25 @@ int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &de
                 m_pos++;
                 if (m_buffer[m_pos] == 'n' || m_buffer[m_pos] == 'l' || m_buffer[m_pos] == 'p')
                 {
-                    currentLen = 0;
-                    currentBufferLen = 0;
+                    if (currentLen < lineLen)
+                    {
+                        strncat(parsedBuffer, currentBuffer, kMaxStringLength);
+                    }
+                    else
+                    {
+                        if (writeNewLine)
+                        {
+                            strncat(parsedBuffer, "\\n", 2);
+                            writeNewLine = false;
+                        }
+                        else
+                        {
+                            strncat(parsedBuffer, "\\l", 2);
+                        }
+                        strncat(parsedBuffer, currentBuffer, kMaxStringLength);
+                    }
+                    currentLen = currentBufferLen = 0;
+                    currentBuffer[0] = '\0';
                     if (m_buffer[m_pos] == 'p')
                     {
                         writeNewLine = true;
@@ -338,7 +355,7 @@ int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &de
     {
         int savedPos = m_pos;
         m_pos = internalPos;
-        char* savedBuffer = m_buffer;
+        char *savedBuffer = m_buffer;
         m_buffer = parsedBuffer;
         std::string sequence = (parsedBuffer[internalPos] == '{') ? ReadBracketedConstants() : ReadCharOrEscape();
         internalPos = m_pos;

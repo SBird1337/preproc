@@ -157,7 +157,7 @@ int main(int argc, char **argv)
 {
     if (argc != 3)
     {
-        std::fprintf(stderr, "Usage: %s SRC_FILE CHARMAP_FILE", argv[0]);
+        std::fprintf(stderr, "Usage: %s SRC_FILE CHARMAP_FILE\n", argv[0]);
         return 1;
     }
 
