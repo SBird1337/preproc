@@ -284,7 +284,6 @@ int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &de
                 {
                     currentLen = 0;
                     currentBufferLen = 0;
-                    printSpace = false;
                     if (m_buffer[m_pos] == 'p')
                     {
                         writeNewLine = true;
