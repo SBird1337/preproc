@@ -269,7 +269,6 @@ int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &de
         }
         else if (m_buffer[m_pos] == '{')
         {
-            printf("reading bracket stuff\n");
             strncat(currentBuffer, "{", 1);
             int bracketLen = GetLengthOfBracketConstant(currentBuffer);
             strncat(currentBuffer, "}", 1);
