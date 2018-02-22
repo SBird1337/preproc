@@ -76,11 +76,8 @@ void PreprocAsmFile(std::string filename)
             (void)stack.top().GetLanguage(lang);
             unsigned char s[kMaxStringLength];
             int length = stack.top().ReadString((s));
-            std::printf("#ifdef ");
-            std::printf(lang);
-            std::printf("\n");
-            std::printf("\t");
-            PrintAsmBytes(s, length + 1);
+            std::printf("#ifdef %s\n\t", lang);
+            PrintAsmBytes(s,length + 1);
             std::printf("#endif\n\n");
             break;
         }
@@ -98,11 +95,8 @@ void PreprocAsmFile(std::string filename)
             (void)stack.top().GetLanguage(lang);
             unsigned char s[kMaxStringLength];
             int length = stack.top().ReadAutoString(s, maxCharLen);
-            std::printf("#ifdef ");
-            std::printf(lang);
-            std::printf("\n");
-            std::printf("\t");
-            PrintAsmBytes(s, length + 1);
+            std::printf("#ifdef %s\n\t", lang);
+            PrintAsmBytes(s,length + 1);
             std::printf("#endif\n\n");
             break;
         }
