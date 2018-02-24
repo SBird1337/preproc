@@ -172,6 +172,8 @@ Directive AsmFile::GetDirective()
         return Directive::Braille;
     else if (CheckForDirective(".autostring"))
         return Directive::AutoString;
+    else if (CheckForDirective(".dexstring"))
+        return Directive::SAutoString;
     else
         return Directive::Unknown;
 }
@@ -288,7 +290,7 @@ std::string AsmFile::ReadPath()
     return std::string(&m_buffer[startPos], length);
 }
 
-int AsmFile::ReadAutoString(unsigned char *s, int lineLength)
+int AsmFile::ReadAutoString(unsigned char *s, int lineLength, bool paragraph)
 {
     SkipWhitespace();
     int length;
@@ -296,7 +298,7 @@ int AsmFile::ReadAutoString(unsigned char *s, int lineLength)
 
     try
     {
-        m_pos += stringParser.ParseStringAndFormat(m_pos, s, length, lineLength);
+        m_pos += stringParser.ParseStringAndFormat(m_pos, s, length, lineLength, paragraph);
     }
     catch (std::runtime_error e)
     {

@@ -214,7 +214,7 @@ int StringParser::GetLengthOfBracketConstant(char *buffer)
     return 0;
 }
 
-int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &destLength, int lineLen)
+int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &destLength, int lineLen, bool paragraph)
 {
     m_pos = srcPos;
     if (m_buffer[m_pos] != '"')
@@ -235,6 +235,19 @@ int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &de
     m_pos++;
     while (m_buffer[m_pos] != '"')
     {
+        unsigned char c = m_buffer[m_pos];
+
+        if (c == 0)
+        {
+            if (m_pos >= m_size)
+                RaiseError("unexpected EOF in UTF-8 string");
+            else
+                RaiseError("unexpected null character in UTF-8 string");
+        }
+
+        if (IsAscii(c) && !IsAsciiPrintable(c))
+            RaiseError("unexpected character U+%X in UTF-8 string", c);
+
         if (m_buffer[m_pos] == ' ')
         {
             currentLen++;
@@ -252,7 +265,7 @@ int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &de
             }
             else
             {
-                if (writeNewLine)
+                if (writeNewLine || (!paragraph))
                 {
                     strncat(parsedBuffer, "\\n", 2);
                     writeNewLine = false;
@@ -293,7 +306,7 @@ int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &de
                     }
                     else
                     {
-                        if (writeNewLine)
+                        if (writeNewLine || (!paragraph))
                         {
                             strncat(parsedBuffer, "\\n", 2);
                             writeNewLine = false;
@@ -338,7 +351,7 @@ int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &de
     }
     else
     {
-        if (writeNewLine)
+        if (writeNewLine || (!paragraph))
         {
             strncat(parsedBuffer, "\\n", 2);
             writeNewLine = false;

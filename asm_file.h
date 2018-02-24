@@ -32,6 +32,7 @@ enum class Directive
     String,
     Braille,
     AutoString,
+    SAutoString,
     Unknown
 };
 
@@ -52,7 +53,7 @@ public:
     void OutputLine();
     void OutputLocation();
     int ReadInt();
-    int ReadAutoString(unsigned char *s, int lineLength);
+    int ReadAutoString(unsigned char *s, int lineLength, bool paragraph);
 
 private:
     char* m_buffer;
