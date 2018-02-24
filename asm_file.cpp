@@ -310,12 +310,12 @@ int AsmFile::ReadAutoString(unsigned char *s, int lineLength, bool paragraph)
     if (ConsumeComma())
     {
         SkipWhitespace();
-        int padLength = ReadPadLength() - 1;
+        int padLength = ReadPadLength();
         if (length > padLength)
-            RaiseError("requested padding of %d exceeded.", padLength + 1);
-        while (length < padLength)
+            RaiseError("requested padding of %d exceeded.", padLength);
+        while (length < padLength-1)
         {
-            s[length++] = 0;
+            s[++length] = 0;
         }
     }
 
@@ -346,12 +346,12 @@ int AsmFile::ReadString(unsigned char *s)
     if (ConsumeComma())
     {
         SkipWhitespace();
-        int padLength = ReadPadLength() - 1;
+        int padLength = ReadPadLength();
         if (length > padLength)
-            RaiseError("requested padding of %d exceeded.", padLength + 1);
-        while (length < padLength)
+            RaiseError("requested padding of %d exceeded.", padLength);
+        while (length < padLength-1)
         {
-            s[length++] = 0;
+            s[++length] = 0;
         }
     }
 

@@ -387,7 +387,7 @@ int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &de
             dest[destLength++] = c;
         }
     }
-    dest[destLength++] = 0xFF;
+    dest[destLength] = 0xFF;
     return m_pos - start;
 }
 
@@ -417,7 +417,7 @@ int StringParser::ParseString(long srcPos, unsigned char *dest, int &destLength)
             dest[destLength++] = c;
         }
     }
-    dest[destLength++] = 0xFF;
+    dest[destLength] = 0xFF;
 
     m_pos++; // Go past the right quote.
 
