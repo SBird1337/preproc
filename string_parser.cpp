@@ -284,6 +284,11 @@ int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &de
                 {
                     if (currentLen < lineLen)
                     {
+                        /* fix #1 (?)*/
+                        if (printSpace)
+                        {
+                            strncat(parsedBuffer, " ", 1);
+                        }
                         strncat(parsedBuffer, currentBuffer, kMaxStringLength);
                     }
                     else
