@@ -261,7 +261,7 @@ int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &de
                 {
                     printSpace = true;
                 }
-                strncat(parsedBuffer, currentBuffer, kMaxStringLength);
+                strncat(parsedBuffer, currentBuffer, kMaxStringLength-1);
             }
             else
             {
@@ -274,7 +274,7 @@ int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &de
                 {
                     strncat(parsedBuffer, "\\l", 2);
                 }
-                strncat(parsedBuffer, currentBuffer, kMaxStringLength);
+                strncat(parsedBuffer, currentBuffer, kMaxStringLength-1);
                 currentLen = currentBufferLen;
             }
             currentBufferLen = 0;
@@ -302,7 +302,7 @@ int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &de
                         {
                             strncat(parsedBuffer, " ", 1);
                         }
-                        strncat(parsedBuffer, currentBuffer, kMaxStringLength);
+                        strncat(parsedBuffer, currentBuffer, kMaxStringLength-1);
                     }
                     else
                     {
@@ -315,7 +315,7 @@ int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &de
                         {
                             strncat(parsedBuffer, "\\l", 2);
                         }
-                        strncat(parsedBuffer, currentBuffer, kMaxStringLength);
+                        strncat(parsedBuffer, currentBuffer, kMaxStringLength-1);
                     }
                     currentLen = currentBufferLen = 0;
                     currentBuffer[0] = '\0';
@@ -347,7 +347,7 @@ int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &de
         {
             strncat(parsedBuffer, " ", 1);
         }
-        strncat(parsedBuffer, currentBuffer, kMaxStringLength);
+        strncat(parsedBuffer, currentBuffer, kMaxStringLength-1);
     }
     else
     {
@@ -360,7 +360,7 @@ int StringParser::ParseStringAndFormat(long srcPos, unsigned char *dest, int &de
         {
             strncat(parsedBuffer, "\\l", 2);
         }
-        strncat(parsedBuffer, currentBuffer, kMaxStringLength);
+        strncat(parsedBuffer, currentBuffer, kMaxStringLength-1);
         currentLen = currentBufferLen;
     }
     strncat(parsedBuffer, "\"", 1);
